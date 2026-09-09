@@ -1,8 +1,9 @@
-import React, { useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { useFont } from '@shopify/react-native-skia';
 import { HeaderBar } from '../components/Common/HeaderBar';
 import { HandwritingCanvas } from '../components/Canvas/HandwritingCanvas';
+import { CategoryPickerModal } from '../components/Common/CategoryPickerModal';
 import { usePracticeStore } from '../store/usePracticeStore';
 import { evaluateHandwriting } from '../engine/imageEvaluator';
 
@@ -11,11 +12,16 @@ export const PracticeScreen: React.FC = () => {
     strokes,
     mode,
     currentText,
+    currentExercise,
     guidelineBaseY,
     evaluationResult,
     setEvaluationResult,
     setIsEvaluating,
+    markExerciseCompleted,
+    nextExercise,
   } = usePracticeStore();
+
+  const [curriculumModalVisible, setCurriculumModalVisible] = useState<boolean>(false);
 
   // Solid cursive font used as the evaluation template mask
   const evalFont = useFont(
@@ -27,7 +33,6 @@ export const PracticeScreen: React.FC = () => {
     if (!evalFont || strokes.length === 0) return;
 
     setIsEvaluating(true);
-    // Use setTimeout so the button UI updates to "Checking..." state before running intensive mask calculations
     setTimeout(() => {
       try {
         const result = evaluateHandwriting({
@@ -38,26 +43,49 @@ export const PracticeScreen: React.FC = () => {
           baseLineY: guidelineBaseY,
         });
         setEvaluationResult(result);
+
+        // Auto-advance criteria: score >= 75% marks exercise as completed
+        if (result.score >= 75) {
+          markExerciseCompleted(currentExercise.id);
+        }
       } catch (err) {
         console.error('Handwriting evaluation failed:', err);
       } finally {
         setIsEvaluating(false);
       }
     }, 20);
-  }, [evalFont, strokes, currentText, mode, guidelineBaseY, setEvaluationResult, setIsEvaluating]);
+  }, [
+    evalFont,
+    strokes,
+    currentText,
+    currentExercise,
+    mode,
+    guidelineBaseY,
+    setEvaluationResult,
+    setIsEvaluating,
+    markExerciseCompleted,
+  ]);
 
   return (
     <View style={styles.container}>
       {/* Top Controls & Navigation */}
-      <HeaderBar onEvaluate={handleEvaluate} />
+      <HeaderBar
+        onEvaluate={handleEvaluate}
+        onOpenCurriculum={() => setCurriculumModalVisible(true)}
+      />
 
       {/* Main Drawing Canvas Area */}
       <View style={styles.canvasContainer}>
         {/* Blank Mode Reference Card */}
         {mode === 'blank' && (
           <View style={styles.referenceCard}>
-            <Text style={styles.referenceLabel}>REFERENCE PROMPT</Text>
+            <Text style={styles.referenceLabel}>
+              {currentExercise.category.toUpperCase()} • LEVEL {currentExercise.difficulty}
+            </Text>
             <Text style={styles.referenceText}>{currentText}</Text>
+            {currentExercise.subText && (
+              <Text style={styles.referenceSub}>{currentExercise.subText}</Text>
+            )}
           </View>
         )}
 
@@ -95,16 +123,29 @@ export const PracticeScreen: React.FC = () => {
                 <Text style={styles.metricValue}>{evaluationResult.coverageScore}%</Text>
               </View>
               <View style={styles.metricChip}>
-                <Text style={styles.metricLabel}>Spill Penalty</Text>
+                <Text style={styles.metricLabel}>Spill</Text>
                 <Text style={styles.metricValue}>-{evaluationResult.spillPenalty}%</Text>
               </View>
               {mode === 'blank' && evaluationResult.slopeAngle !== undefined && (
                 <View style={styles.metricChip}>
-                  <Text style={styles.metricLabel}>Slope Angle</Text>
+                  <Text style={styles.metricLabel}>Slope</Text>
                   <Text style={styles.metricValue}>{evaluationResult.slopeAngle}°</Text>
                 </View>
               )}
             </View>
+
+            {/* Auto-Advance / Next Lesson Button if Proficient (>= 75%) */}
+            {evaluationResult.score >= 75 && (
+              <TouchableOpacity
+                style={styles.nextLessonBtn}
+                onPress={() => {
+                  setEvaluationResult(null);
+                  nextExercise();
+                }}
+              >
+                <Text style={styles.nextLessonText}>🎉 Proficient! Next Exercise ➔</Text>
+              </TouchableOpacity>
+            )}
           </View>
         )}
 
@@ -113,14 +154,21 @@ export const PracticeScreen: React.FC = () => {
         {/* Empty Canvas Helpful Watermark Hint */}
         {strokes.length === 0 && !evaluationResult && (
           <View pointerEvents="none" style={styles.hintContainer}>
+            <Text style={styles.hintInstruction}>{currentExercise.instruction}</Text>
             <Text style={styles.hintSub}>
               {mode === 'trace'
-                ? 'Follow the dashed cursive guidelines with your Apple Pencil'
-                : 'Write the prompt text freely on the guidelines below'}
+                ? 'Trace along the dashed cursive guidelines with your Apple Pencil'
+                : 'Write freely following the 4-line guidelines'}
             </Text>
           </View>
         )}
       </View>
+
+      {/* Curriculum Picker Modal */}
+      <CategoryPickerModal
+        visible={curriculumModalVisible}
+        onClose={() => setCurriculumModalVisible(false)}
+      />
     </View>
   );
 };
@@ -140,7 +188,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     backgroundColor: '#FFFFFF',
     paddingVertical: 8,
-    paddingHorizontal: 20,
+    paddingHorizontal: 22,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#E2E8F0',
@@ -163,6 +211,11 @@ const styles = StyleSheet.create({
     fontFamily: 'LearningCurvePro',
     fontSize: 26,
     color: '#1E293B',
+  },
+  referenceSub: {
+    fontSize: 11,
+    color: '#64748B',
+    marginTop: 2,
   },
   evalCard: {
     position: 'absolute',
@@ -261,6 +314,19 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#1E293B',
   },
+  nextLessonBtn: {
+    marginTop: 12,
+    backgroundColor: '#0EA5E9',
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  nextLessonText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 13,
+  },
   hintContainer: {
     position: 'absolute',
     bottom: 24,
@@ -270,12 +336,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     zIndex: 5,
   },
+  hintInstruction: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#64748B',
+    marginBottom: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    paddingVertical: 4,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+  },
   hintSub: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#94A3B8',
     backgroundColor: 'rgba(255, 255, 255, 0.85)',
-    paddingVertical: 4,
-    paddingHorizontal: 12,
+    paddingVertical: 3,
+    paddingHorizontal: 10,
     borderRadius: 6,
   },
 });

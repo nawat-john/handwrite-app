@@ -8,12 +8,14 @@ interface HeaderBarProps {
   title?: string;
   subtitle?: string;
   onEvaluate?: () => void;
+  onOpenCurriculum?: () => void;
 }
 
 export const HeaderBar: React.FC<HeaderBarProps> = ({
   title = 'CursiveCraft',
   subtitle = 'iPad Penmanship Practice',
   onEvaluate,
+  onOpenCurriculum,
 }) => {
   const {
     strokes,
@@ -26,6 +28,10 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
     mode,
     setMode,
     isEvaluating,
+    currentExercise,
+    nextExercise,
+    prevExercise,
+    selectedCategory,
   } = usePracticeStore();
 
   const canUndo = strokes.length > 0;
@@ -33,10 +39,29 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
 
   return (
     <View style={styles.header}>
-      {/* App Branding */}
+      {/* App Branding & Lesson Stepper */}
       <View style={styles.leftSection}>
-        <Text style={styles.appTitle}>{title}</Text>
-        <Text style={styles.appSubtitle}>{subtitle}</Text>
+        <View style={styles.brandRow}>
+          <Text style={styles.appTitle}>{title}</Text>
+          <Text style={styles.appSubtitle}>{subtitle}</Text>
+        </View>
+
+        {/* Curriculum Lesson Picker & Stepper */}
+        <View style={styles.lessonControlRow}>
+          {onOpenCurriculum && (
+            <ToolButton
+              label={`📚 ${selectedCategory.toUpperCase()}: ${currentExercise.text.slice(0, 14)}${currentExercise.text.length > 14 ? '...' : ''}`}
+              onPress={onOpenCurriculum}
+              style={styles.curriculumButton}
+              textStyle={styles.curriculumText}
+            />
+          )}
+
+          <View style={styles.stepperGroup}>
+            <ToolButton label="◀" onPress={prevExercise} style={styles.stepperBtn} />
+            <ToolButton label="▶" onPress={nextExercise} style={styles.stepperBtn} />
+          </View>
+        </View>
       </View>
 
       {/* Center Controls: Mode, Stroke Width & Palm Rejection */}
@@ -128,6 +153,38 @@ const styles = StyleSheet.create({
   leftSection: {
     flexDirection: 'column',
     justifyContent: 'center',
+  },
+  brandRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 8,
+  },
+  lessonControlRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 4,
+  },
+  curriculumButton: {
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    backgroundColor: '#F0F9FF',
+    borderColor: '#BAE6FD',
+  },
+  curriculumText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#0369A1',
+  },
+  stepperGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  stepperBtn: {
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    minWidth: 28,
   },
   appTitle: {
     fontSize: 18,

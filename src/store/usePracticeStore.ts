@@ -18,6 +18,13 @@ export const DEFAULT_GUIDELINE_METRICS: GuidelineMetrics = {
 };
 
 import type { EvaluationResult } from '../engine/imageEvaluator';
+import type { ExerciseCategory, ExerciseItem } from '../types/curriculum';
+import {
+  ALL_EXERCISES,
+  getExercisesByCategory,
+  getNextExercise,
+  getPrevExercise,
+} from '../data/exercises';
 
 interface PracticeState {
   strokes: Stroke[];
@@ -30,6 +37,11 @@ interface PracticeState {
   guidelineBaseY: number;
   evaluationResult: EvaluationResult | null;
   isEvaluating: boolean;
+
+  // Curriculum State
+  currentExercise: ExerciseItem;
+  selectedCategory: ExerciseCategory;
+  completedExerciseIds: string[];
 
   // Actions
   addStroke: (stroke: Stroke) => void;
@@ -46,19 +58,30 @@ interface PracticeState {
   setGuidelineBaseY: (y: number) => void;
   setEvaluationResult: (result: EvaluationResult | null) => void;
   setIsEvaluating: (isEvaluating: boolean) => void;
+
+  // Curriculum Actions
+  selectExercise: (exercise: ExerciseItem) => void;
+  selectCategory: (category: ExerciseCategory) => void;
+  nextExercise: () => void;
+  prevExercise: () => void;
+  markExerciseCompleted: (exerciseId: string) => void;
 }
 
-export const usePracticeStore = create<PracticeState>((set) => ({
+export const usePracticeStore = create<PracticeState>((set, get) => ({
   strokes: [],
   currentPoints: [],
   strokeWidth: 3.8,
   strokeColor: '#1E293B',
   palmRejectionEnabled: true,
   mode: 'trace',
-  currentText: 'The quick brown fox jumps over the lazy dog',
+  currentText: ALL_EXERCISES[0].text,
   guidelineBaseY: 260,
   evaluationResult: null,
   isEvaluating: false,
+
+  currentExercise: ALL_EXERCISES[0],
+  selectedCategory: 'alphabet',
+  completedExerciseIds: [],
 
   addStroke: (stroke) =>
     set((state) => ({
@@ -103,4 +126,62 @@ export const usePracticeStore = create<PracticeState>((set) => ({
   setEvaluationResult: (result) => set({ evaluationResult: result }),
 
   setIsEvaluating: (isEvaluating) => set({ isEvaluating }),
+
+  selectExercise: (exercise) =>
+    set({
+      currentExercise: exercise,
+      currentText: exercise.text,
+      selectedCategory: exercise.category,
+      strokes: [],
+      currentPoints: [],
+      evaluationResult: null,
+    }),
+
+  selectCategory: (category) => {
+    const list = getExercisesByCategory(category);
+    if (list.length > 0) {
+      set({
+        selectedCategory: category,
+        currentExercise: list[0],
+        currentText: list[0].text,
+        strokes: [],
+        currentPoints: [],
+        evaluationResult: null,
+      });
+    }
+  },
+
+  nextExercise: () => {
+    const current = get().currentExercise;
+    const next = getNextExercise(current.id);
+    set({
+      currentExercise: next,
+      currentText: next.text,
+      selectedCategory: next.category,
+      strokes: [],
+      currentPoints: [],
+      evaluationResult: null,
+    });
+  },
+
+  prevExercise: () => {
+    const current = get().currentExercise;
+    const prev = getPrevExercise(current.id);
+    set({
+      currentExercise: prev,
+      currentText: prev.text,
+      selectedCategory: prev.category,
+      strokes: [],
+      currentPoints: [],
+      evaluationResult: null,
+    });
+  },
+
+  markExerciseCompleted: (exerciseId) =>
+    set((state) => {
+      if (state.completedExerciseIds.includes(exerciseId)) {
+        return state;
+      }
+      return { completedExerciseIds: [...state.completedExerciseIds, exerciseId] };
+    }),
 }));
