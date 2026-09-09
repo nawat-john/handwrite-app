@@ -1,12 +1,31 @@
 import { create } from 'zustand';
 import type { Stroke, Point } from '../types/canvas';
 
+export type PracticeMode = 'trace' | 'blank';
+
+export interface GuidelineMetrics {
+  xHeight: number; // 40px (mid height)
+  ascenderHeight: number; // 40px (1.0 * xHeight)
+  descenderDepth: number; // 32px (0.8 * xHeight)
+  lineSpacing: number; // 112px total
+}
+
+export const DEFAULT_GUIDELINE_METRICS: GuidelineMetrics = {
+  xHeight: 40,
+  ascenderHeight: 40,
+  descenderDepth: 32,
+  lineSpacing: 112,
+};
+
 interface PracticeState {
   strokes: Stroke[];
   currentPoints: Point[];
   strokeWidth: number;
   strokeColor: string;
   palmRejectionEnabled: boolean;
+  mode: PracticeMode;
+  currentText: string;
+  guidelineBaseY: number;
 
   // Actions
   addStroke: (stroke: Stroke) => void;
@@ -18,6 +37,9 @@ interface PracticeState {
   togglePalmRejection: () => void;
   setCurrentPoints: (points: Point[]) => void;
   clearCurrentPoints: () => void;
+  setMode: (mode: PracticeMode) => void;
+  setCurrentText: (text: string) => void;
+  setGuidelineBaseY: (y: number) => void;
 }
 
 export const usePracticeStore = create<PracticeState>((set) => ({
@@ -26,6 +48,9 @@ export const usePracticeStore = create<PracticeState>((set) => ({
   strokeWidth: 3.8,
   strokeColor: '#1E293B',
   palmRejectionEnabled: true,
+  mode: 'trace',
+  currentText: 'The quick brown fox jumps over the lazy dog',
+  guidelineBaseY: 260,
 
   addStroke: (stroke) =>
     set((state) => ({
@@ -56,4 +81,10 @@ export const usePracticeStore = create<PracticeState>((set) => ({
   setCurrentPoints: (points) => set({ currentPoints: points }),
 
   clearCurrentPoints: () => set({ currentPoints: [] }),
+
+  setMode: (mode) => set({ mode }),
+
+  setCurrentText: (text) => set({ currentText: text }),
+
+  setGuidelineBaseY: (y) => set({ guidelineBaseY: y }),
 }));

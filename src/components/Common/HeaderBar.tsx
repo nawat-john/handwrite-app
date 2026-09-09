@@ -21,6 +21,8 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
     clearCanvas,
     palmRejectionEnabled,
     togglePalmRejection,
+    mode,
+    setMode,
   } = usePracticeStore();
 
   const canUndo = strokes.length > 0;
@@ -34,8 +36,26 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
         <Text style={styles.appSubtitle}>{subtitle}</Text>
       </View>
 
-      {/* Center Controls: Stroke Width & Palm Rejection Mode */}
+      {/* Center Controls: Mode, Stroke Width & Palm Rejection */}
       <View style={styles.centerSection}>
+        {/* Practice Mode Switcher */}
+        <View style={styles.groupContainer}>
+          <ToolButton
+            label="✍️ Trace"
+            isActive={mode === 'trace'}
+            onPress={() => setMode('trace')}
+            style={styles.pillButton}
+          />
+          <ToolButton
+            label="📝 Blank"
+            isActive={mode === 'blank'}
+            onPress={() => setMode('blank')}
+            style={styles.pillButton}
+          />
+        </View>
+
+        <View style={styles.separator} />
+
         <View style={styles.groupContainer}>
           <Text style={styles.groupLabel}>Width:</Text>
           {STROKE_WIDTH_OPTIONS.map((opt) => (
@@ -52,7 +72,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
         <View style={styles.separator} />
 
         <ToolButton
-          label={palmRejectionEnabled ? '✏️ Apple Pencil Only' : '🖐️ Pencil + Touch'}
+          label={palmRejectionEnabled ? '✏️ Apple Pencil' : '🖐️ Touch'}
           isActive={palmRejectionEnabled}
           onPress={togglePalmRejection}
           style={styles.palmButton}

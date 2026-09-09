@@ -1,8 +1,10 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { StyleSheet, View, GestureResponderEvent } from 'react-native';
+import { StyleSheet, View, GestureResponderEvent, LayoutChangeEvent } from 'react-native';
 import { Canvas, Path, useCanvasRef } from '@shopify/react-native-skia';
 import { usePracticeStore } from '../../store/usePracticeStore';
 import { smoothPointsToPath } from '../../engine/strokeSmoother';
+import { GuidelineOverlay } from './GuidelineOverlay';
+import { TracingGhost } from './TracingGhost';
 import type { Point } from '../../types/canvas';
 
 interface HandwritingCanvasProps {
@@ -19,10 +21,21 @@ export const HandwritingCanvas: React.FC<HandwritingCanvasProps> = ({ children }
     addStroke,
   } = usePracticeStore();
 
+  const [dimensions, setDimensions] = useState<{ width: number; height: number }>({
+    width: 1200,
+    height: 600,
+  });
   const [activePoints, setActivePoints] = useState<Point[]>([]);
   const isDrawingRef = useRef<boolean>(false);
   const currentPointsRef = useRef<Point[]>([]);
   const isStylusRef = useRef<boolean>(false);
+
+  const handleLayout = useCallback((event: LayoutChangeEvent) => {
+    const { width, height } = event.nativeEvent.layout;
+    if (width > 0 && height > 0) {
+      setDimensions({ width, height });
+    }
+  }, []);
 
   const handleTouchStart = useCallback(
     (event: GestureResponderEvent) => {
@@ -105,6 +118,7 @@ export const HandwritingCanvas: React.FC<HandwritingCanvasProps> = ({ children }
   return (
     <View
       style={styles.container}
+      onLayout={handleLayout}
       onStartShouldSetResponder={() => true}
       onMoveShouldSetResponder={() => true}
       onResponderGrant={handleTouchStart}
@@ -113,7 +127,13 @@ export const HandwritingCanvas: React.FC<HandwritingCanvasProps> = ({ children }
       onResponderTerminate={handleTouchCancel}
     >
       <Canvas ref={canvasRef} style={styles.canvas}>
-        {/* Render child layers first (e.g. guidelines and ghost template) */}
+        {/* 1. Guideline Overlay Layer (French/American 4-line Ruled + Slant Guides) */}
+        <GuidelineOverlay width={dimensions.width} />
+
+        {/* 2. Tracing Ghost Font Layer (LearningCurvePro-Dashed in Trace Mode) */}
+        <TracingGhost />
+
+        {/* 3. Additional custom children layers if provided */}
         {children}
 
         {/* Render previously completed strokes */}
