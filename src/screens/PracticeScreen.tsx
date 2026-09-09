@@ -4,7 +4,9 @@ import { useFont } from '@shopify/react-native-skia';
 import { HeaderBar } from '../components/Common/HeaderBar';
 import { HandwritingCanvas } from '../components/Canvas/HandwritingCanvas';
 import { CategoryPickerModal } from '../components/Common/CategoryPickerModal';
+import { ScoreModal } from '../components/Evaluation/ScoreModal';
 import { usePracticeStore } from '../store/usePracticeStore';
+import { useHistoryStore } from '../store/useHistoryStore';
 import { evaluateHandwriting } from '../engine/imageEvaluator';
 
 export const PracticeScreen: React.FC = () => {
@@ -19,6 +21,7 @@ export const PracticeScreen: React.FC = () => {
     setIsEvaluating,
     markExerciseCompleted,
     nextExercise,
+    clearCanvas,
   } = usePracticeStore();
 
   const [curriculumModalVisible, setCurriculumModalVisible] = useState<boolean>(false);
@@ -43,6 +46,23 @@ export const PracticeScreen: React.FC = () => {
           baseLineY: guidelineBaseY,
         });
         setEvaluationResult(result);
+
+        // Persist attempt and update best score
+        useHistoryStore.getState().recordAttempt({
+          exerciseId: currentExercise.id,
+          exerciseText: currentText,
+          category: currentExercise.category,
+          mode,
+          score: result.score,
+          rating: result.rating,
+          ratingColor: result.ratingColor,
+          coverageScore: result.coverageScore,
+          spillPenalty: result.spillPenalty,
+          slopePenalty: result.slopePenalty,
+          slopeAngle: result.slopeAngle,
+          feedback: result.feedback,
+          timestamp: Date.now(),
+        });
 
         // Auto-advance criteria: score >= 75% marks exercise as completed
         if (result.score >= 75) {
@@ -89,66 +109,6 @@ export const PracticeScreen: React.FC = () => {
           </View>
         )}
 
-        {/* Evaluation Result HUD Card */}
-        {evaluationResult && (
-          <View style={styles.evalCard}>
-            <View style={styles.evalTopRow}>
-              <View style={styles.scoreCircle}>
-                <Text style={[styles.scoreValue, { color: evaluationResult.ratingColor }]}>
-                  {evaluationResult.score}%
-                </Text>
-              </View>
-
-              <View style={styles.evalMeta}>
-                <View style={[styles.ratingBadge, { backgroundColor: evaluationResult.ratingColor + '20' }]}>
-                  <Text style={[styles.ratingText, { color: evaluationResult.ratingColor }]}>
-                    {evaluationResult.rating}
-                  </Text>
-                </View>
-                <Text style={styles.evalFeedback}>{evaluationResult.feedback}</Text>
-              </View>
-
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={() => setEvaluationResult(null)}
-              >
-                <Text style={styles.closeText}>✕</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Diagnostic Metrics Chips */}
-            <View style={styles.metricsRow}>
-              <View style={styles.metricChip}>
-                <Text style={styles.metricLabel}>Coverage</Text>
-                <Text style={styles.metricValue}>{evaluationResult.coverageScore}%</Text>
-              </View>
-              <View style={styles.metricChip}>
-                <Text style={styles.metricLabel}>Spill</Text>
-                <Text style={styles.metricValue}>-{evaluationResult.spillPenalty}%</Text>
-              </View>
-              {mode === 'blank' && evaluationResult.slopeAngle !== undefined && (
-                <View style={styles.metricChip}>
-                  <Text style={styles.metricLabel}>Slope</Text>
-                  <Text style={styles.metricValue}>{evaluationResult.slopeAngle}°</Text>
-                </View>
-              )}
-            </View>
-
-            {/* Auto-Advance / Next Lesson Button if Proficient (>= 75%) */}
-            {evaluationResult.score >= 75 && (
-              <TouchableOpacity
-                style={styles.nextLessonBtn}
-                onPress={() => {
-                  setEvaluationResult(null);
-                  nextExercise();
-                }}
-              >
-                <Text style={styles.nextLessonText}>🎉 Proficient! Next Exercise ➔</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        )}
-
         <HandwritingCanvas />
 
         {/* Empty Canvas Helpful Watermark Hint */}
@@ -163,6 +123,20 @@ export const PracticeScreen: React.FC = () => {
           </View>
         )}
       </View>
+
+      {/* Visual Feedback Modal (Task 6) */}
+      <ScoreModal
+        visible={evaluationResult !== null}
+        result={evaluationResult}
+        exerciseText={currentText}
+        onClose={() => setEvaluationResult(null)}
+        onTryAgain={() => {
+          clearCanvas();
+        }}
+        onNextExercise={() => {
+          nextExercise();
+        }}
+      />
 
       {/* Curriculum Picker Modal */}
       <CategoryPickerModal
@@ -216,116 +190,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#64748B',
     marginTop: 2,
-  },
-  evalCard: {
-    position: 'absolute',
-    top: 16,
-    right: 20,
-    width: 380,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    elevation: 5,
-    zIndex: 30,
-  },
-  evalTopRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  scoreCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#F8FAFC',
-    borderWidth: 2,
-    borderColor: '#E2E8F0',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  scoreValue: {
-    fontSize: 18,
-    fontWeight: '800',
-  },
-  evalMeta: {
-    flex: 1,
-  },
-  ratingBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-    marginBottom: 4,
-  },
-  ratingText: {
-    fontSize: 12,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  evalFeedback: {
-    fontSize: 12,
-    color: '#475569',
-    lineHeight: 16,
-  },
-  closeButton: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#F1F5F9',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  closeText: {
-    fontSize: 12,
-    color: '#64748B',
-    fontWeight: '600',
-  },
-  metricsRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
-  },
-  metricChip: {
-    flex: 1,
-    backgroundColor: '#F8FAFC',
-    borderRadius: 8,
-    paddingVertical: 6,
-    paddingHorizontal: 8,
-    alignItems: 'center',
-  },
-  metricLabel: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: '#94A3B8',
-    marginBottom: 2,
-  },
-  metricValue: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#1E293B',
-  },
-  nextLessonBtn: {
-    marginTop: 12,
-    backgroundColor: '#0EA5E9',
-    borderRadius: 10,
-    paddingVertical: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  nextLessonText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 13,
   },
   hintContainer: {
     position: 'absolute',

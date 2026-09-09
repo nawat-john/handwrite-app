@@ -12,6 +12,7 @@ import { CATEGORY_METAS } from '../../types/curriculum';
 import type { ExerciseCategory, ExerciseItem } from '../../types/curriculum';
 import { getExercisesByCategory } from '../../data/exercises';
 import { usePracticeStore } from '../../store/usePracticeStore';
+import { useHistoryStore } from '../../store/useHistoryStore';
 
 interface CategoryPickerModalProps {
   visible: boolean;
@@ -29,6 +30,8 @@ export const CategoryPickerModal: React.FC<CategoryPickerModalProps> = ({
     selectExercise,
     completedExerciseIds,
   } = usePracticeStore();
+
+  const bestScores = useHistoryStore((s) => s.bestScores);
 
   const exercises = getExercisesByCategory(selectedCategory);
 
@@ -87,6 +90,7 @@ export const CategoryPickerModal: React.FC<CategoryPickerModalProps> = ({
               {exercises.map((ex, idx) => {
                 const isCurrent = currentExercise.id === ex.id;
                 const isCompleted = completedExerciseIds.includes(ex.id);
+                const bestScore = bestScores[ex.id];
 
                 return (
                   <TouchableOpacity
@@ -100,11 +104,30 @@ export const CategoryPickerModal: React.FC<CategoryPickerModalProps> = ({
                   >
                     <View style={styles.cardHeader}>
                       <Text style={styles.cardIndex}>#{idx + 1}</Text>
-                      {isCompleted && (
-                        <View style={styles.checkBadge}>
-                          <Text style={styles.checkText}>✓ Done</Text>
-                        </View>
-                      )}
+                      <View style={styles.headerBadges}>
+                        {bestScore !== undefined && bestScore > 0 && (
+                          <View
+                            style={[
+                              styles.scoreBadge,
+                              bestScore >= 75 ? styles.scoreBadgeHigh : styles.scoreBadgeLow,
+                            ]}
+                          >
+                            <Text
+                              style={[
+                                styles.scoreBadgeText,
+                                bestScore >= 75 ? styles.scoreBadgeTextHigh : styles.scoreBadgeTextLow,
+                              ]}
+                            >
+                              ★ {bestScore}%
+                            </Text>
+                          </View>
+                        )}
+                        {isCompleted && (
+                          <View style={styles.checkBadge}>
+                            <Text style={styles.checkText}>✓ Done</Text>
+                          </View>
+                        )}
+                      </View>
                     </View>
 
                     <Text
@@ -268,6 +291,32 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     color: '#94A3B8',
+  },
+  headerBadges: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  scoreBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  scoreBadgeHigh: {
+    backgroundColor: '#DCFCE7',
+  },
+  scoreBadgeLow: {
+    backgroundColor: '#FEF3C7',
+  },
+  scoreBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  scoreBadgeTextHigh: {
+    color: '#16A34A',
+  },
+  scoreBadgeTextLow: {
+    color: '#D97706',
   },
   checkBadge: {
     backgroundColor: '#DCFCE7',
