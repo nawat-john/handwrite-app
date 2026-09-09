@@ -8,9 +8,16 @@
 [![React Native 0.86](https://img.shields.io/badge/React%20Native-0.86.3-61DAFB.svg?style=flat&logo=react)](https://reactnative.dev)
 [![TypeScript 6.0](https://img.shields.io/badge/TypeScript-6.0-blue.svg?style=flat&logo=typescript)](https://www.typescriptlang.org)
 [![Shopify Skia](https://img.shields.io/badge/Shopify-React%20Native%20Skia-red.svg)](https://shopify.github.io/react-native-skia/)
-[![Platform iPad](https://img.shields.io/badge/Platform-iPad%20Landscape-grey.svg?style=flat&logo=apple)](https://apple.com)
+[![Deploy to GitHub Pages](https://github.com/nawat-john/handwrite-app/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/nawat-john/handwrite-app/actions/workflows/deploy-pages.yml)
+[![GitHub Pages](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-success?style=flat&logo=github)](https://nawat-john.github.io/handwrite-app/)
 
 ---
+
+## 📱 Live Demo & Scannable QR Code
+
+| 📷 Scan with iPad / iPhone | 🌐 Direct Browser Access |
+| :---: | :--- |
+| <img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=https://nawat-john.github.io/handwrite-app/" width="190" height="190" alt="CursiveCraft QR Code" /> | **Live Web App:** [https://nawat-john.github.io/handwrite-app/](https://nawat-john.github.io/handwrite-app/)<br><br>Scan the QR code with your iPad camera or open the link to start practicing cursive handwriting in Safari or any browser with touch/mouse support! |
 
 ## 📖 Overview
 
@@ -215,12 +222,11 @@ $$P_{spill} = \frac{\sum_{x,y} (U(x,y) \land \neg T_{dilated}(x,y))}{\sum_{x,y} 
 
 ---
 
-## 🤝 Continuous Integration
+## 🤝 Continuous Integration & Deployment
 
-All pull requests and commits to `main` are automatically checked via [GitHub Actions](.github/workflows/ci.yml):
-- Full TypeScript compilation (`tsc --noEmit`)
-- Expo configuration validation (`expo config --type public`)
-- Complete Metro iOS bundle export (`expo export -p ios --no-bytecode`)
+- **CI Pipeline ([ci.yml](.github/workflows/ci.yml)):** Automatically runs on pull requests and pushes to validate TypeScript compilation (`tsc --noEmit`), Expo config, and Metro iOS bundle generation.
+- **Pages Deployment ([deploy-pages.yml](.github/workflows/deploy-pages.yml)):** Automatically exports the web build and deploys to **GitHub Pages** on every push to `main`.
+  - *Repository Setup:* Go to `Settings` ➔ `Pages` ➔ under **Build and deployment > Source**, select **`GitHub Actions`**.
 
 ---
 
