@@ -7,11 +7,13 @@ import { STROKE_WIDTH_OPTIONS } from '../../types/canvas';
 interface HeaderBarProps {
   title?: string;
   subtitle?: string;
+  onEvaluate?: () => void;
 }
 
 export const HeaderBar: React.FC<HeaderBarProps> = ({
   title = 'CursiveCraft',
   subtitle = 'iPad Penmanship Practice',
+  onEvaluate,
 }) => {
   const {
     strokes,
@@ -23,6 +25,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
     togglePalmRejection,
     mode,
     setMode,
+    isEvaluating,
   } = usePracticeStore();
 
   const canUndo = strokes.length > 0;
@@ -79,8 +82,16 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
         />
       </View>
 
-      {/* Right Controls: Undo & Clear */}
+      {/* Right Controls: Evaluate, Undo & Clear */}
       <View style={styles.rightSection}>
+        {onEvaluate && (
+          <ToolButton
+            label={isEvaluating ? '⏳ Checking...' : '🎯 Check'}
+            disabled={!canUndo || isEvaluating}
+            variant="primary"
+            onPress={onEvaluate}
+          />
+        )}
         <ToolButton
           label={`↩ Undo (${strokes.length})`}
           disabled={!canUndo}

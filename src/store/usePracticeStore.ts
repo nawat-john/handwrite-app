@@ -17,6 +17,8 @@ export const DEFAULT_GUIDELINE_METRICS: GuidelineMetrics = {
   lineSpacing: 112,
 };
 
+import type { EvaluationResult } from '../engine/imageEvaluator';
+
 interface PracticeState {
   strokes: Stroke[];
   currentPoints: Point[];
@@ -26,6 +28,8 @@ interface PracticeState {
   mode: PracticeMode;
   currentText: string;
   guidelineBaseY: number;
+  evaluationResult: EvaluationResult | null;
+  isEvaluating: boolean;
 
   // Actions
   addStroke: (stroke: Stroke) => void;
@@ -40,6 +44,8 @@ interface PracticeState {
   setMode: (mode: PracticeMode) => void;
   setCurrentText: (text: string) => void;
   setGuidelineBaseY: (y: number) => void;
+  setEvaluationResult: (result: EvaluationResult | null) => void;
+  setIsEvaluating: (isEvaluating: boolean) => void;
 }
 
 export const usePracticeStore = create<PracticeState>((set) => ({
@@ -51,22 +57,28 @@ export const usePracticeStore = create<PracticeState>((set) => ({
   mode: 'trace',
   currentText: 'The quick brown fox jumps over the lazy dog',
   guidelineBaseY: 260,
+  evaluationResult: null,
+  isEvaluating: false,
 
   addStroke: (stroke) =>
     set((state) => ({
       strokes: [...state.strokes, stroke],
       currentPoints: [],
+      // Invalidate previous evaluation if new strokes added
+      evaluationResult: null,
     })),
 
   undo: () =>
     set((state) => ({
       strokes: state.strokes.slice(0, -1),
+      evaluationResult: null,
     })),
 
   clearCanvas: () =>
     set(() => ({
       strokes: [],
       currentPoints: [],
+      evaluationResult: null,
     })),
 
   setStrokeWidth: (width) => set({ strokeWidth: width }),
@@ -82,9 +94,13 @@ export const usePracticeStore = create<PracticeState>((set) => ({
 
   clearCurrentPoints: () => set({ currentPoints: [] }),
 
-  setMode: (mode) => set({ mode }),
+  setMode: (mode) => set({ mode, evaluationResult: null }),
 
-  setCurrentText: (text) => set({ currentText: text }),
+  setCurrentText: (text) => set({ currentText: text, evaluationResult: null }),
 
   setGuidelineBaseY: (y) => set({ guidelineBaseY: y }),
+
+  setEvaluationResult: (result) => set({ evaluationResult: result }),
+
+  setIsEvaluating: (isEvaluating) => set({ isEvaluating }),
 }));
