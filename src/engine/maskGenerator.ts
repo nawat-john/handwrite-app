@@ -32,7 +32,8 @@ export function generateTargetTextMask(
   x: number,
   y: number,
   width: number,
-  height: number
+  height: number,
+  scale: number = 1
 ): Uint8Array {
   const surface = createOffscreenSurface(width, height);
   const canvas = surface.getCanvas();
@@ -42,7 +43,12 @@ export function generateTargetTextMask(
   paint.setColor(Skia.Color('#000000'));
   paint.setAntiAlias(true);
 
-  canvas.drawText(text, x, y, paint, font);
+  // Same transform as TracingGhost: scale around the baseline start point
+  canvas.save();
+  canvas.translate(x, y);
+  canvas.scale(scale, scale);
+  canvas.drawText(text, 0, 0, paint, font);
+  canvas.restore();
   surface.flush();
 
   const image = surface.makeImageSnapshot();

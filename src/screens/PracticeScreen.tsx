@@ -1,5 +1,5 @@
-import React, { useState, useCallback } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
+import React, { useState, useCallback, useMemo } from 'react';
+import { StyleSheet, View, Text } from 'react-native';
 import { useFont } from '@shopify/react-native-skia';
 import { HeaderBar } from '../components/Common/HeaderBar';
 import { HandwritingCanvas } from '../components/Canvas/HandwritingCanvas';
@@ -8,6 +8,7 @@ import { ScoreModal } from '../components/Evaluation/ScoreModal';
 import { usePracticeStore } from '../store/usePracticeStore';
 import { useHistoryStore } from '../store/useHistoryStore';
 import { evaluateHandwriting } from '../engine/imageEvaluator';
+import { BASE_FONT_SIZE, TEXT_START_X, fitTextScale } from '../types/canvas';
 
 export const PracticeScreen: React.FC = () => {
   const {
@@ -16,6 +17,7 @@ export const PracticeScreen: React.FC = () => {
     currentText,
     currentExercise,
     guidelineBaseY,
+    canvasSize,
     evaluationResult,
     setEvaluationResult,
     setIsEvaluating,
@@ -29,8 +31,18 @@ export const PracticeScreen: React.FC = () => {
   // Solid cursive font used as the evaluation template mask
   const evalFont = useFont(
     require('../../assets/fonts/LearningCurvePro.otf'),
-    96
+    BASE_FONT_SIZE
   );
+
+  // Long words/sentences shrink to fit the canvas width (guidelines, ghost and scoring together)
+  // (measureText is not implemented on Skia web, glyph advances work everywhere)
+  const textScale = useMemo(() => {
+    if (!evalFont) return 1;
+    const width = evalFont
+      .getGlyphWidths(evalFont.getGlyphIDs(currentText))
+      .reduce((sum, w) => sum + w, 0);
+    return fitTextScale(width, canvasSize.width);
+  }, [evalFont, currentText, canvasSize.width]);
 
   const handleEvaluate = useCallback(() => {
     if (!evalFont || strokes.length === 0) return;
@@ -43,7 +55,11 @@ export const PracticeScreen: React.FC = () => {
           targetText: currentText,
           font: evalFont,
           mode,
+          width: canvasSize.width,
+          height: canvasSize.height,
+          textX: TEXT_START_X,
           baseLineY: guidelineBaseY,
+          textScale,
         });
         setEvaluationResult(result);
 
@@ -81,6 +97,8 @@ export const PracticeScreen: React.FC = () => {
     currentExercise,
     mode,
     guidelineBaseY,
+    canvasSize,
+    textScale,
     setEvaluationResult,
     setIsEvaluating,
     markExerciseCompleted,
@@ -109,7 +127,7 @@ export const PracticeScreen: React.FC = () => {
           </View>
         )}
 
-        <HandwritingCanvas />
+        <HandwritingCanvas textScale={textScale} />
 
         {/* Empty Canvas Helpful Watermark Hint */}
         {strokes.length === 0 && !evaluationResult && (

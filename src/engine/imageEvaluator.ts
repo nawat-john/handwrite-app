@@ -31,6 +31,7 @@ export interface EvaluationOptions {
   height?: number;
   textX?: number;
   baseLineY?: number;
+  textScale?: number;
 }
 
 /**
@@ -46,6 +47,7 @@ export function evaluateHandwriting(options: EvaluationOptions): EvaluationResul
     height = 500,
     textX = 60,
     baseLineY = 260,
+    textScale = 1,
   } = options;
 
   const timestamp = Date.now();
@@ -65,7 +67,7 @@ export function evaluateHandwriting(options: EvaluationOptions): EvaluationResul
   }
 
   // 1. Generate Target Font Mask and User Stroke Mask
-  const targetMask = generateTargetTextMask(targetText, font, textX, baseLineY, width, height);
+  const targetMask = generateTargetTextMask(targetText, font, textX, baseLineY, width, height, textScale);
   const userMask = generateUserStrokesMask(strokes, width, height);
 
   // Count active pixels

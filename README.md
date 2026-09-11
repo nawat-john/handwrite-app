@@ -9,15 +9,21 @@
 [![TypeScript 6.0](https://img.shields.io/badge/TypeScript-6.0-blue.svg?style=flat&logo=typescript)](https://www.typescriptlang.org)
 [![Shopify Skia](https://img.shields.io/badge/Shopify-React%20Native%20Skia-red.svg)](https://shopify.github.io/react-native-skia/)
 [![Deploy to GitHub Pages](https://github.com/nawat-john/handwrite-app/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/nawat-john/handwrite-app/actions/workflows/deploy-pages.yml)
-[![GitHub Pages](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-success?style=flat&logo=github)](https://nawat-john.github.io/handwrite-app/)
+[![Open Web App](https://img.shields.io/badge/Open-Web%20App-success?style=flat&logo=github)](https://nawatpim.com/handwrite-app/)
 
 ---
 
-## 📱 Live Demo & Scannable QR Code
+## 📱 Install on iPad (no App Store, no account)
 
-| 📷 Scan with iPad / iPhone | 🌐 Direct Browser Access |
-| :---: | :--- |
-| <img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=https://nawat-john.github.io/handwrite-app/" width="190" height="190" alt="CursiveCraft QR Code" /> | **Live Web App:** [https://nawat-john.github.io/handwrite-app/](https://nawat-john.github.io/handwrite-app/)<br><br>Scan the QR code with your iPad camera or open the link to start practicing cursive handwriting in Safari or any browser with touch/mouse support! |
+<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=8&data=https://nawatpim.com/handwrite-app/" width="160" height="160" alt="QR code for nawatpim.com/handwrite-app" align="right" />
+
+1. On the iPad, open **[nawatpim.com/handwrite-app](https://nawatpim.com/handwrite-app/)** in **Safari** (or scan the QR with the Camera).
+2. Tap **Share** ➔ **Add to Home Screen**.
+3. Launch **CursiveCraft** from the Home Screen: it opens full screen like a regular app. Write with Apple Pencil; use your fingers for the buttons.
+
+The site is rebuilt on every push to `main` by [deploy-pages.yml](.github/workflows/deploy-pages.yml). Practice history is stored in the browser on the iPad (Home Screen web apps keep their storage; clearing Safari website data erases it). The app needs internet to open (no offline cache yet); scoring itself runs on the iPad.
+
+<br clear="right" />
 
 ## 📖 Overview
 
@@ -31,8 +37,10 @@ Built entirely with **TypeScript**, **React Native Skia**, **Zustand**, and **As
 
 ### ✍️ 1. Ultra-Low Latency Skia Drawing Engine
 - **Catmull-Rom to Cubic Bézier Spline Smoothing:** Raw polyline touch streams are mathematically converted to smooth cubic Bézier curves in real-time, eliminating jagged hand micro-tremors without introducing input lag.
-- **Hardware Palm Rejection:** Differentiates Apple Pencil pressure points (`touch.force > 0` & `stylusType === 1`) from accidental palm contact on iPad glass.
-- **Stylus Mode Switcher:** Includes a toggle between **"Apple Pencil Only"** (strict palm rejection) and **"Touch Allowed"** (for development on simulators or non-stylus touchscreens).
+- **Apple Pencil Writing, Finger UI:** Every touch is tracked by id and only the Apple Pencil draws. Fingers and a resting palm never draw; fingers stay free for the toolbar buttons.
+  - *Web app:* DOM pointer events report `pointerType: "pen"` per pointer, so this works even when the palm lands first.
+  - *Expo Go:* a `react-native-gesture-handler` Manual gesture checks `PointerType.STYLUS` (reported per event, not per touch; iPadOS cancels resting-palm touches, so this holds in practice).
+- **Stylus Mode Switcher:** Includes a toggle between **"Apple Pencil Only"** (default) and **"Touch Allowed"** (for the iOS Simulator or when no Pencil is at hand).
 - **Penmanship Controls:** Undo stack, Clear Canvas, and stroke width selector (Thin, Medium, Bold).
 
 ### 📏 2. Classical 4-Line Penmanship Guidelines
@@ -42,6 +50,7 @@ Built entirely with **TypeScript**, **React Native Skia**, **Zustand**, and **As
   - Base line (resting line for lower-case bodies)
   - Descender line (-32px below Base line)
 - **70° Slant Guidelines:** Slanted reference lines spaced across the canvas guide consistent letter forward tilt.
+- **Font-Calibrated:** `LearningCurvePro` at 128px has exactly these proportions (x-height 40, ascender 80, descender 32). Words and sentences wider than the canvas are scaled down together with the guidelines and the scoring template, so every exercise fits on one line.
 
 ### 👻 3. Dual Practice Modes
 - **Trace Mode:** Dashed cursive template rendered directly on the guideline using `LearningCurvePro-Dashed` font. Ideal for developing initial muscle memory.
@@ -80,29 +89,13 @@ Categorized across 4 difficulty tiers:
 
 | Dimension | App Store Version | CursiveCraft Project | Compatibility Status |
 | :--- | :--- | :--- | :--- |
-| **Expo SDK** | **SDK 57** | **SDK 57** (`~57.0.21`) | ✅ **100% Match** |
-| **React Native** | **0.86** | **0.86.3** | ✅ **100% Match** |
-| **React** | **19.2** | **19.2.3** | ✅ **100% Match** |
-| **Native Module Support** | Sandboxed Native Set | `@shopify/react-native-skia` | ⚠️ **Requires Development Build** |
+| **Expo SDK** | **SDK 57** (Expo Go 57.0.x) | **SDK 57** (`~57.0.21`) | ✅ Match |
+| **React Native** | **0.86** | **0.86.3** | ✅ Match |
+| **React** | **19.2** | **19.2.3** | ✅ Match |
+| **Native modules** | Bundled in Expo Go | `@shopify/react-native-skia` 2.6.2, `react-native-gesture-handler` 2.32, `@react-native-async-storage/async-storage` 2.2.0, `expo-font` | ✅ All included in Expo Go |
 
-### 🔍 Important Note Regarding `@shopify/react-native-skia`
-- The Expo Go application available on the Apple App Store uses **React Native 0.86 / Expo SDK 57**, which matches CursiveCraft's core dependencies.
-- **However**, `@shopify/react-native-skia` is a high-performance 2D graphics engine written in C++ that uses JSI (JavaScript Interface). As documented by Shopify and the Expo core team, **Skia is not included in the generic Expo Go App Store sandbox**.
-- Attempting to load Skia inside standard Expo Go will fail because native Skia bindings are absent from the generic binary.
-
-### 🚀 Recommended Execution Options:
-1. **Local Development Build (Recommended for iPad + Apple Pencil):**
-   ```bash
-   npx expo run:ios
-   ```
-   This generates the native iOS workspace and installs the app on your connected iPad or simulator with full Apple Pencil pressure sensitivity and native Skia acceleration.
-2. **Cloud EAS Development Build:**
-   ```bash
-   npx eas-cli build --profile development --platform ios
-   ```
-   Install the resulting build on your iPad via Ad-Hoc provisioning or Apple Developer certificate.
-3. **Custom Expo Go (`eas go`):**
-   Use `npx eas-cli go` to build a personalized Expo Go client containing Skia for your team.
+- Every native dependency is on the exact version bundled with SDK 57 (`npx expo install --check` passes), and all of them ship inside Expo Go, so **no development build is needed**.
+- Expo Go runs only **one** SDK version at a time. Before upgrading the Expo SDK, check that the App Store Expo Go already supports the new SDK (in 2026 the App Store version lagged behind new SDK releases for months).
 
 ---
 
@@ -124,7 +117,12 @@ Categorized across 4 difficulty tiers:
 CursiveCraft/
 ├── .github/
 │   └── workflows/
-│       └── ci.yml                     # Continuous integration workflow
+│       ├── ci.yml                     # Continuous integration workflow
+│       └── deploy-pages.yml           # Web app (PWA) build + GitHub Pages deploy
+├── public/
+│   ├── index.html                     # Web template: PWA meta, no zoom/selection while writing
+│   ├── manifest.json                  # Add to Home Screen manifest
+│   └── icon.png                       # Home Screen icon
 ├── assets/
 │   ├── fonts/
 │   │   ├── LearningCurvePro.otf       # Solid cursive evaluation template font
@@ -169,7 +167,7 @@ CursiveCraft/
 ### 1. Prerequisites
 - **Node.js** `>= 20.0.0`
 - **npm** or **yarn**
-- **macOS** with **Xcode 16+** (for building iOS development client) or **EAS CLI** for cloud builds
+- **Safari** on iPad for the web app, or **Expo Go** (SDK 57) from the App Store for native development
 
 ### 2. Installation
 ```bash
@@ -192,20 +190,18 @@ npm run export
 
 ### 4. Running the App
 
-#### On iPad via Local Development Build:
+Web app (same as the GitHub Pages build):
 ```bash
-npx expo run:ios
+npm run web
 ```
 
-#### On iOS Simulator:
-```bash
-npx expo run:ios --simulator "iPad Pro 13-inch (M4)"
-```
+Expo Go (for native development):
 
-#### Starting the Metro Dev Server:
 ```bash
 npm start
 ```
+
+Scan the QR code shown in the terminal with the iPad Camera (iPad and computer on the same Wi-Fi, or add `--tunnel`). On the iOS Simulator there is no Apple Pencil: switch the toolbar toggle to **🖐️ Touch** to draw with the mouse.
 
 ---
 
@@ -225,8 +221,9 @@ $$P_{spill} = \frac{\sum_{x,y} (U(x,y) \land \neg T_{dilated}(x,y))}{\sum_{x,y} 
 ## 🤝 Continuous Integration & Deployment
 
 - **CI Pipeline ([ci.yml](.github/workflows/ci.yml)):** Automatically runs on pull requests and pushes to validate TypeScript compilation (`tsc --noEmit`), Expo config, and Metro iOS bundle generation.
-- **Pages Deployment ([deploy-pages.yml](.github/workflows/deploy-pages.yml)):** Automatically exports the web build and deploys to **GitHub Pages** on every push to `main`.
-  - *Repository Setup:* Go to `Settings` ➔ `Pages` ➔ under **Build and deployment > Source**, select **`GitHub Actions`**.
+- **Web App Deployment ([deploy-pages.yml](.github/workflows/deploy-pages.yml)):** On every push to `main`, exports the web build (`npx expo export -p web`) and deploys it to **GitHub Pages** as an installable web app.
+  - *Repository Setup:* `Settings` ➔ `Pages` ➔ **Build and deployment > Source** ➔ **`GitHub Actions`**.
+  - `npm install` / `npm ci` runs `setup-skia-web public` (postinstall), which copies Skia's `canvaskit.wasm` into `public/` so it ships with the site.
 
 ---
 

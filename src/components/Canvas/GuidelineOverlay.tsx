@@ -4,14 +4,17 @@ import { usePracticeStore, DEFAULT_GUIDELINE_METRICS } from '../../store/usePrac
 
 interface GuidelineOverlayProps {
   width?: number;
-  height?: number;
+  scale?: number; // Same scale as the tracing text, so letters stay inside the bands
 }
 
 export const GuidelineOverlay: React.FC<GuidelineOverlayProps> = ({
   width = 1200,
+  scale = 1,
 }) => {
   const { guidelineBaseY } = usePracticeStore();
-  const { xHeight, ascenderHeight, descenderDepth } = DEFAULT_GUIDELINE_METRICS;
+  const xHeight = DEFAULT_GUIDELINE_METRICS.xHeight * scale;
+  const ascenderHeight = DEFAULT_GUIDELINE_METRICS.ascenderHeight * scale;
+  const descenderDepth = DEFAULT_GUIDELINE_METRICS.descenderDepth * scale;
 
   // Vertical guideline metrics
   const topY = guidelineBaseY - (ascenderHeight + xHeight); // Top Ascender Line

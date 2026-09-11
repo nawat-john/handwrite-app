@@ -35,6 +35,7 @@ interface PracticeState {
   mode: PracticeMode;
   currentText: string;
   guidelineBaseY: number;
+  canvasSize: { width: number; height: number };
   evaluationResult: EvaluationResult | null;
   isEvaluating: boolean;
 
@@ -56,6 +57,7 @@ interface PracticeState {
   setMode: (mode: PracticeMode) => void;
   setCurrentText: (text: string) => void;
   setGuidelineBaseY: (y: number) => void;
+  setCanvasSize: (size: { width: number; height: number }) => void;
   setEvaluationResult: (result: EvaluationResult | null) => void;
   setIsEvaluating: (isEvaluating: boolean) => void;
 
@@ -76,6 +78,7 @@ export const usePracticeStore = create<PracticeState>((set, get) => ({
   mode: 'trace',
   currentText: ALL_EXERCISES[0].text,
   guidelineBaseY: 260,
+  canvasSize: { width: 1200, height: 600 },
   evaluationResult: null,
   isEvaluating: false,
 
@@ -122,6 +125,8 @@ export const usePracticeStore = create<PracticeState>((set, get) => ({
   setCurrentText: (text) => set({ currentText: text, evaluationResult: null }),
 
   setGuidelineBaseY: (y) => set({ guidelineBaseY: y }),
+
+  setCanvasSize: (canvasSize) => set({ canvasSize }),
 
   setEvaluationResult: (result) => set({ evaluationResult: result }),
 

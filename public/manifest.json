@@ -1,0 +1,14 @@
+{
+  "name": "CursiveCraft",
+  "short_name": "CursiveCraft",
+  "description": "Cursive handwriting practice for iPad and Apple Pencil",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#F8FAFC",
+  "theme_color": "#F8FAFC",
+  "icons": [
+    { "src": "icon.png", "sizes": "1024x1024", "type": "image/png", "purpose": "any" }
+  ]
+}
